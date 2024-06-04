@@ -1,45 +1,11 @@
 // src/components/ExpenseList.jsx
-import React, { useEffect, useState } from 'react';
-import { db } from '../firebaseConfig';
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  deleteDoc,
-  doc,
-  updateDoc,
-  addDoc,
-} from 'firebase/firestore';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from 'react';
+import { useExpenses } from '../context/ExpensesContext';
 
 function ExpenseList() {
-  const [expenses, setExpenses] = useState([]);
-  const { currentUser } = useAuth();
+  const { expenses, addExpense, deleteExpense, updateExpense } = useExpenses();
   const [edit, setEdit] = useState(false);
   const [editData, setEditData] = useState({ name: '', amount: '', id: '' });
-
-  useEffect(() => {
-    fetchExpenses();
-  }, [currentUser]);
-
-  const fetchExpenses = async () => {
-    if (currentUser) {
-      const q = query(
-        collection(db, 'expenses'),
-        where('userId', '==', currentUser.uid)
-      );
-      const querySnapshot = await getDocs(q);
-      setExpenses(
-        querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }))
-      );
-    }
-  };
-
-  const handleDelete = async (id) => {
-    await deleteDoc(doc(db, 'expenses', id));
-    setExpenses((prev) => prev.filter((expense) => expense.id !== id));
-  };
 
   const handleEdit = (expense) => {
     setEdit(true);
@@ -47,25 +13,12 @@ function ExpenseList() {
   };
 
   const handleUpdate = async () => {
-    const expenseDocRef = doc(db, 'expenses', editData.id);
-    await updateDoc(expenseDocRef, {
+    await updateExpense(editData.id, {
       name: editData.name,
       amount: parseFloat(editData.amount),
     });
-    await fetchExpenses(); // Refresh the list after update
     setEdit(false);
     setEditData({ name: '', amount: '', id: '' });
-  };
-
-  const handleAddExpense = async (name, amount) => {
-    if (!name || amount <= 0) return;
-    await addDoc(collection(db, 'expenses'), {
-      name,
-      amount,
-      userId: currentUser.uid,
-      createdAt: new Date(),
-    });
-    await fetchExpenses(); // Refresh the list after adding
   };
 
   return (
@@ -122,7 +75,7 @@ function ExpenseList() {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(expense.id)}
+                  onClick={() => deleteExpense(expense.id)}
                   className="bg-red-500 hover:bg-red-700 text-white px-3 py-1 rounded shadow"
                 >
                   Delete

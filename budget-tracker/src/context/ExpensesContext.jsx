@@ -10,8 +10,8 @@ import {
   doc,
   updateDoc,
 } from 'firebase/firestore';
-import { db } from '../firebaseConfig'; // Ensure this is the correct path
-import { useAuth } from './AuthContext'; // Ensure this is the correct path
+import { db } from '../firebaseConfig';
+import { useAuth } from './AuthContext';
 
 const ExpensesContext = createContext();
 
@@ -37,26 +37,24 @@ export const ExpensesProvider = ({ children }) => {
         id: doc.id,
         ...doc.data(),
       }));
-      setExpenses(newExpenses); // Ensure state is updated here
+      setExpenses(newExpenses);
     });
 
-    return unsubscribe; // Cleanup the subscription
+    return () => unsubscribe();
   }, [currentUser]);
 
-  // Function to add a new expense
   const addExpense = async (newExpense) => {
     await addDoc(collection(db, 'expenses'), {
       ...newExpense,
       userId: currentUser.uid,
+      createdAt: new Date(), // Ensure createdAt is set here if needed
     });
   };
 
-  // Function to delete an expense
   const deleteExpense = async (id) => {
     await deleteDoc(doc(db, 'expenses', id));
   };
 
-  // Function to update an existing expense
   const updateExpense = async (id, updatedExpense) => {
     const expenseDocRef = doc(db, 'expenses', id);
     await updateDoc(expenseDocRef, updatedExpense);
